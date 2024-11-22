@@ -10,7 +10,7 @@ app = Flask(__name__)
 
 # Load configuration from environment or default
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "your_secret_key_here")
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///default.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SESSION_TYPE'] = 'filesystem'
 
