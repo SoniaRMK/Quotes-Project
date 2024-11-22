@@ -2,7 +2,6 @@ alembic==1.12.1
 appnope==0.1.0
 APScheduler==3.10.4
 backcall==0.2.0
-backports.zoneinfo==0.2.1
 bcrypt==3.1.4
 beautifulsoup4==4.12.3
 blinker==1.4
@@ -36,7 +35,6 @@ Mako==1.2.4
 MarkupSafe==2.1.5
 matplotlib-inline==0.1.6
 mccabe==0.7.0
-neuralart==1.1.1
 numpy==1.21.6
 packaging==24.0
 parso==0.8.4
@@ -60,9 +58,9 @@ six==1.16.0
 soupsieve==2.4.1
 SQLAlchemy==2.0.35
 tomli==2.0.1
-torch==1.13.1
 traitlets==5.9.0
 typing_extensions==4.7.1
+tzdata
 tzlocal==5.1
 urllib3==1.26.16
 wcwidth==0.2.13
