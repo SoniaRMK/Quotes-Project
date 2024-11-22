@@ -43,6 +43,7 @@ parso==0.8.4
 pexpect==4.9.0
 pickleshare==0.7.5
 Pillow==9.5.0
+pipdeptree==2.9.6
 pluggy==1.2.0
 prompt_toolkit==3.0.47
 psycopg2-binary==2.9.9
