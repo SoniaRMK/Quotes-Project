@@ -8,8 +8,8 @@ from flask_session import Session
 import logging
 from models import db
 from routes import routes
-from .tasks import scheduler
-from quotes_app.services import fetch_multiple_quotes_from_api
+from tasks import scheduler
+from services import fetch_multiple_quotes_from_api
 
 # Load environment variables
 load_dotenv()
