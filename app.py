@@ -6,7 +6,7 @@ from flask_cors import CORS
 from flask_wtf.csrf import CSRFProtect
 from flask_session import Session
 import logging
-from .models import db
+from models import db
 from quotes_app.routes import routes
 from .tasks import scheduler
 from quotes_app.services import fetch_multiple_quotes_from_api
