@@ -1,7 +1,7 @@
 import requests
 import datetime
 import time
-from quotes_app.models import db, Quote, Category
+from .models import db, Quote, Category
 import logging
 import os
 
