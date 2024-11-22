@@ -5,6 +5,7 @@
 *.pyc
 *.pyo
 __pycache__/
+.pytest_cache/
 
 # Virtual Environments
 venv/
