@@ -1,5 +1,5 @@
-from flask import Flask
 from dotenv import load_dotenv
+from flask import Flask
 from src.models import db  
 from src.routes import routes  
 from flask_session import Session
