@@ -1,10 +1,10 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
-from models import db, User, Quote, Vote, Report, Category  
+from quotes_app.models import db, User, Quote, Vote, Report, Category  
 from flask_cors import cross_origin
 from werkzeug.security import generate_password_hash, check_password_hash
 import logging
-from services import get_quote_of_the_day, get_categorized_quotes, get_uncategorized_quotes, fetch_multiple_quotes_from_api  # Updated import
-from forms import QuoteForm, SignupForm  
+from quotes_app.services import get_quote_of_the_day, get_categorized_quotes, get_uncategorized_quotes, fetch_multiple_quotes_from_api  # Updated import
+from quotes_app.forms import QuoteForm, SignupForm  
 from flask_sqlalchemy import Pagination
 
 logger = logging.getLogger(__name__)

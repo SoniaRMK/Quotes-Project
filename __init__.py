@@ -1,11 +1,16 @@
+from dotenv import load_dotenv
 from flask import Flask
-from models import db  
-from routes import routes  
+from quotes_app.models import db  
+from quotes_app.routes import routes  
 from flask_migrate import Migrate
 from flask_session import Session
 from flask_wtf.csrf import CSRFProtect
 import os
 
+# Load environment variables from .env file
+load_dotenv()
+
+# Initialize Flask app
 app = Flask(__name__)
 
 # Load configuration from environment or default
