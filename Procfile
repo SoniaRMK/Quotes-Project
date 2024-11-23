@@ -1,1 +1,1 @@
-web: gunicorn app:app --chdir quotes_project
+web: gunicorn app:app

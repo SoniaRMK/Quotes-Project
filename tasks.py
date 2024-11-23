@@ -1,5 +1,5 @@
 from apscheduler.schedulers.background import BackgroundScheduler
-from quotes_project.services import get_quote_of_the_day
+from .services import get_quote_of_the_day
 import logging
 
 logger = logging.getLogger(__name__)

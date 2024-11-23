@@ -25,4 +25,4 @@ if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
 
 print("Current working directory:", os.getcwd())
-print("Directory contents:", os.listdir())
+print("Python path:", sys.path)
