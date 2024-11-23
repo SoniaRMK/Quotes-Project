@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from __init__ import create_app
+from quotes_project import create_app  # Absolute import
 import logging
 
 # Load environment variables
@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Start the scheduler if it is not already running (handled in `tasks.py`)
-from quotes_project.tasks import scheduler  # Use absolute import
+from quotes_project.tasks import scheduler  # Absolute import
 
 if not scheduler.running:
     scheduler.start()
