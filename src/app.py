@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Start the scheduler if it is not already running (handled in `tasks.py`)
-from quotes_project.tasks import scheduler  # Absolute import
+from src.tasks import scheduler
 
 if not scheduler.running:
     scheduler.start()
