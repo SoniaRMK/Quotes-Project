@@ -1,8 +1,6 @@
-from dotenv import load_dotenv
 from flask import Flask
 from src.models import db  
 from src.routes import routes  
-from flask_migrate import Migrate
 from flask_session import Session
 from flask_wtf.csrf import CSRFProtect
 from flask_cors import CORS
@@ -31,7 +29,6 @@ def create_app():
     db.init_app(app)
     csrf = CSRFProtect(app)
     Session(app)
-    migrate = Migrate(app, db)
     CORS(app, resources={r"/*": {"origins": ["http://localhost:3000"]}}, supports_credentials=True)
 
     # Register blueprints

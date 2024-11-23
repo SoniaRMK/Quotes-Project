@@ -1,7 +1,9 @@
 import os
 import sys
 from dotenv import load_dotenv
-from src import create_app  
+from src import create_app
+from src.models import db
+from flask_migrate import Migrate  # Add this import
 import logging
 
 # Load environment variables
@@ -9,6 +11,9 @@ load_dotenv()
 
 # Create the app instance using the factory function
 app = create_app()
+
+# Initialize Flask-Migrate
+migrate = Migrate(app, db)  # Add this line to initialize Migrate with app and db
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
