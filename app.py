@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from quotes_project import create_app  # Use absolute import
+from __init__ import create_app
 import logging
 
 # Load environment variables
