@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import logging
 from src.services import get_quote_of_the_day, get_categorized_quotes, get_uncategorized_quotes, fetch_multiple_quotes_from_api  # Updated import
 from src.forms import QuoteForm, SignupForm  
-from flask_sqlalchemy import Pagination
+from flask_sqlalchemy import SQLAlchemy
 
 logger = logging.getLogger(__name__)
 
@@ -127,17 +127,21 @@ def logout():
 def view_quotes():
     logger.debug("View quotes page accessed.")
 
+    # Get pagination parameters from the request
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+
     # Search functionality remains the same if applicable
     search_query = request.args.get('search', '')
     expanded_categories = request.args.get('expanded_categories', '').split(',')
 
     if search_query:
         logger.info(f"Searching for quotes with query: {search_query}")
-        quotes = Quote.query.filter(
+        quotes_query = Quote.query.filter(
             (Quote.text.ilike(f"%{search_query}%")) |
             (Quote.author.ilike(f"%{search_query}%")) |
             (User.username.ilike(f"%{search_query}%") & (User.id == Quote.submitted_by))
-        ).order_by(Quote.id).all()
+        ).order_by(Quote.id)
     else:
         # Only fetch quotes from the API if the current count is significantly low
         existing_quote_count = Quote.query.count()
@@ -149,12 +153,15 @@ def view_quotes():
                 logger.error(f"Error fetching quotes from the API: {str(e)}. Proceeding with existing quotes.")
 
         # Retrieve pre-categorized quotes from the database
-        quotes = Quote.query.order_by(Quote.id).all()
+        quotes_query = Quote.query.order_by(Quote.id)
+
+    # Paginate the quotes
+    paginated_quotes = quotes_query.paginate(page, per_page, error_out=False)
 
     # Group quotes by category from the database (not categorizing on each request)
     categorized_quotes = {}
     uncategorized_quotes = []
-    for quote in quotes:
+    for quote in paginated_quotes.items:
         if quote.categories:
             for category in quote.categories:
                 if category.name not in categorized_quotes:
@@ -169,7 +176,8 @@ def view_quotes():
         categorized_quotes=categorized_quotes, 
         uncategorized_quotes=uncategorized_quotes, 
         search_query=search_query,
-        expanded_categories=expanded_categories
+        expanded_categories=expanded_categories,
+        pagination=paginated_quotes  # Pass pagination object to template
     )
 
 @routes.route('/quotes/new', methods=["GET", "POST"])
