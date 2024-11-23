@@ -1,7 +1,7 @@
 import requests
 import datetime
 import time
-from .models import db, Quote, Category
+from src.models import db, Quote, Category 
 import logging
 import os
 
