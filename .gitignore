@@ -13,9 +13,6 @@ venv/
 # Flask Session Files
 flask_session/
 
-# SQLAlchemy Migration Files
-migrations/versions/
-
 # Logs and Temporary Files
 *.log
 *.tmp

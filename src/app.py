@@ -3,7 +3,7 @@ import sys
 from dotenv import load_dotenv
 from src import create_app
 from src.models import db
-from flask_migrate import Migrate  # Add this import
+from flask_migrate import Migrate  
 import logging
 
 # Load environment variables
