@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
 from flask import Flask
-from src.models import db  
+from src.models import db, User, Quote, Vote, Report, Category
 from src.routes import routes  
 from flask_session import Session
 from flask_wtf.csrf import CSRFProtect
@@ -27,7 +27,7 @@ def create_app():
     app.config['SESSION_COOKIE_HTTPONLY'] = True
 
     # Initialize extensions
-    db.init_app(app)
+    db.init_app(app)  # Initialize SQLAlchemy after importing models
     csrf = CSRFProtect(app)
     Session(app)
     CORS(app, resources={r"/*": {"origins": ["http://localhost:3000"]}}, supports_credentials=True)
