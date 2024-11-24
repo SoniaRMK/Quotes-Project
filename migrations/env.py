@@ -1,11 +1,9 @@
 import logging
 from logging.config import fileConfig
+from sqlalchemy import engine_from_config, pool
 from src.models import db, User, Quote, Vote, Report, Category
 from flask import current_app
-
 from alembic import context
-
-target_metadata = db.metadata
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -16,6 +14,9 @@ config = context.config
 fileConfig(config.config_file_name)
 logger = logging.getLogger('alembic.env')
 
+# add your model's MetaData object here
+# for 'autogenerate' support
+target_metadata = db.metadata
 
 def get_engine():
     try:
