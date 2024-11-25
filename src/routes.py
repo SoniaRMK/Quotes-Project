@@ -3,9 +3,10 @@ from src.models import db, User, Quote, Vote, Report, Category
 from flask_cors import cross_origin
 from werkzeug.security import generate_password_hash, check_password_hash
 import logging
-from src.services import get_quote_of_the_day, get_categorized_quotes, get_uncategorized_quotes, fetch_multiple_quotes_from_api  # Updated import
+from src.services import get_quote_of_the_day, fetch_multiple_quotes_from_api, get_categorized_quotes, get_uncategorized_quotes
 from src.forms import QuoteForm, SignupForm  
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import IntegrityError
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +21,9 @@ def home():
         personalized_quotes = Quote.query.join(Quote.categories).filter(Category.id.in_([c.id for c in user.categories])).all()
     else:
         personalized_quotes = []
+
+    # Consolidate categories
+    consolidate_categories()
 
     categorized_quotes = get_categorized_quotes()
     uncategorized_quotes = get_uncategorized_quotes()
@@ -40,6 +44,53 @@ def home():
         featured_qod=featured_qod,
         personalized_quotes=personalized_quotes
     )
+
+
+def consolidate_categories():
+    try:
+        # Define mapping of categories to consolidate
+        category_mapping = {
+            'inspire': 'Inspiration',
+            'management': 'Management',
+            'sports': 'Sports',
+            'life': 'Life',
+            'funny': 'Humor',
+            'students': 'Education',
+            'hardwork': 'Hard Work',
+            'self-improvement': 'Self Improvement',
+            'self-worth': 'Self Worth',
+            'self-imposed-limits': 'Self Imposed Limits',
+            # Add more mappings as needed
+        }
+
+        # Fetch all categories
+        all_categories = Category.query.all()
+        category_names = {category.name.lower(): category for category in all_categories}
+
+        for old_name, new_name in category_mapping.items():
+            old_name = old_name.lower()
+            new_name = new_name.strip()
+
+            # Check if old category exists and new category does not cause conflict
+            if old_name in category_names and new_name.lower() not in category_names:
+                category = category_names[old_name]
+                category.name = new_name
+                logger.info(f"Updating category '{old_name}' to '{new_name}'")
+            elif old_name in category_names and new_name.lower() in category_names:
+                # Merge quotes from old category to new category
+                old_category = category_names[old_name]
+                new_category = category_names[new_name.lower()]
+                for quote in old_category.quotes:
+                    if quote not in new_category.quotes:
+                        new_category.quotes.append(quote)
+                # Delete the old category after merging
+                db.session.delete(old_category)
+                logger.info(f"Merging category '{old_name}' into '{new_name}' and deleting '{old_name}'")
+
+        db.session.commit()
+    except IntegrityError as e:
+        db.session.rollback()
+        logger.error(f"Error consolidating categories: {str(e)}")
 
 @routes.before_app_request
 def debug_csrf_token():
@@ -129,55 +180,56 @@ def view_quotes():
 
     # Get pagination parameters from the request
     page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 10, type=int)
+    per_page = request.args.get('per_page', 10, type=int)  # Number of categories per page
 
-    # Search functionality remains the same if applicable
-    search_query = request.args.get('search', '')
-    expanded_categories = request.args.get('expanded_categories', '').split(',')
-
-    if search_query:
-        logger.info(f"Searching for quotes with query: {search_query}")
-        quotes_query = Quote.query.filter(
-            (Quote.text.ilike(f"%{search_query}%")) |
-            (Quote.author.ilike(f"%{search_query}%")) |
-            (User.username.ilike(f"%{search_query}%") & (User.id == Quote.submitted_by))
-        ).order_by(Quote.id)
-    else:
-        # Only fetch quotes from the API if the current count is significantly low
-        existing_quote_count = Quote.query.count()
-        if existing_quote_count < 50:
-            try:
-                logger.info(f"Existing quotes count ({existing_quote_count}) is less than 50. Fetching more quotes from the API.")
-                fetch_multiple_quotes_from_api(500 - existing_quote_count)
-            except Exception as e:
-                logger.error(f"Error fetching quotes from the API: {str(e)}. Proceeding with existing quotes.")
-
-        # Retrieve pre-categorized quotes from the database
-        quotes_query = Quote.query.order_by(Quote.id)
-
-    # Paginate the quotes
-    paginated_quotes = quotes_query.paginate(page, per_page, error_out=False)
-
-    # Group quotes by category from the database (not categorizing on each request)
+    # Fetch and group all quotes by category
     categorized_quotes = {}
     uncategorized_quotes = []
-    for quote in paginated_quotes.items:
+
+    all_quotes = Quote.query.order_by(Quote.id).all()
+
+    # Group quotes by categories and collect uncategorized quotes
+    for quote in all_quotes:
         if quote.categories:
             for category in quote.categories:
-                if category.name not in categorized_quotes:
-                    categorized_quotes[category.name] = []
-                categorized_quotes[category.name].append(quote)
+                category_name = category.name.strip().lower()
+                if category_name not in categorized_quotes:
+                    categorized_quotes[category_name] = []
+                categorized_quotes[category_name].append(quote)
         else:
             uncategorized_quotes.append(quote)
 
+    # Sort categories alphabetically
+    sorted_categories = dict(sorted(categorized_quotes.items()))
+
+    # Create a list of tuples (category_name, quotes) for easier pagination
+    category_list = list(sorted_categories.items())
+
+    # Calculate the total number of pages, considering uncategorized quotes at the end
+    total_categories = len(category_list)
+    total_pages = (total_categories // per_page) + (1 if total_categories % per_page != 0 else 0)
+    if uncategorized_quotes:
+        total_pages += 1
+
+    # Apply pagination to the list of categories
+    start_index = (page - 1) * per_page
+    end_index = start_index + per_page
+    paginated_categories = category_list[start_index:end_index]
+
+    # Determine if we are on the last page to show uncategorized quotes
+    show_uncategorized = (page == total_pages) and uncategorized_quotes
+
     logger.info("Rendering view quotes page with grouped quotes by categories.")
     return render_template(
-        'view_quotes.html', 
-        categorized_quotes=categorized_quotes, 
-        uncategorized_quotes=uncategorized_quotes, 
-        search_query=search_query,
-        expanded_categories=expanded_categories,
-        pagination=paginated_quotes  # Pass pagination object to template
+        'view_quotes.html',
+        paginated_categories=paginated_categories,
+        uncategorized_quotes=uncategorized_quotes if show_uncategorized else [],
+        total_categories=total_categories,
+        total_pages=total_pages,
+        page=page,
+        per_page=per_page,
+        search_query=request.args.get('search', ''),
+        expanded_categories=request.args.get('expanded_categories', '').split(',')
     )
 
 @routes.route('/quotes/new', methods=["GET", "POST"])
@@ -308,13 +360,13 @@ def vote_quote(quote_id):
         db.session.commit()
         logger.info(f"Vote successfully updated for quote ID {quote_id}")
 
-        # Redirect to the previous page or specified next page
-        next_page = request.args.get('next') or request.referrer or url_for('routes.home')
-        expanded = request.args.get('expanded', '')
-        if expanded:
-            next_page += f"&expanded={expanded}"
+        # Redirect to the previous page or specified next page, keeping all parameters intact
+        expanded_categories = request.form.get('expanded_categories', '')
+        page = request.form.get('page', 1)
+        search_query = request.form.get('search', '')
 
-        return redirect(next_page)
+        next_page = request.referrer or url_for('routes.view_quotes', page=page, search=search_query, expanded_categories=expanded_categories)
+        return redirect(next_page + f"#quote-{quote_id}")
 
     except Exception as e:
         db.session.rollback()

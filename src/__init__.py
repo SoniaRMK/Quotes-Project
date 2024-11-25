@@ -5,6 +5,7 @@ from src.routes import routes
 from flask_session import Session
 from flask_wtf.csrf import CSRFProtect
 from flask_cors import CORS
+from flask_migrate import Migrate
 import os
 
 # Load environment variables from .env file
@@ -28,6 +29,7 @@ def create_app():
 
     # Initialize extensions
     db.init_app(app)  # Initialize SQLAlchemy after importing models
+    Migrate(app, db)
     csrf = CSRFProtect(app)
     Session(app)
     CORS(app, resources={r"/*": {"origins": ["http://localhost:3000"]}}, supports_credentials=True)

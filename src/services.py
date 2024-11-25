@@ -4,6 +4,7 @@ import time
 from src.models import db, Quote, Category 
 import logging
 import os
+from collections import defaultdict
 
 logger = logging.getLogger(__name__)
 
@@ -180,25 +181,17 @@ def fetch_categories_from_api():
 
 # Function to get categorized quotes
 def get_categorized_quotes():
-    categorized_quotes = {}
+    categorized_quotes = defaultdict(list)
     quotes = Quote.query.join(Quote.categories).all()
     for quote in quotes:
         for category in quote.categories:
-            if category.name not in categorized_quotes:
-                categorized_quotes[category.name] = []
-            categorized_quotes[category.name].append(quote)
+            normalized_category = category.name.strip().lower()
+            categorized_quotes[normalized_category].append(quote)
+
     logger.info(f"Total categorized quotes count: {len(categorized_quotes)}")
-    return categorized_quotes
+    return dict(categorized_quotes)
 
 # Function to get uncategorized quotes
-# def get_uncategorized_quotes():
-#     uncategorized_quotes = []
-#     quotes = Quote.query.all()
-#     for quote in quotes:
-#         if not quote.categories:
-#             uncategorized_quotes.append(quote)
-#     logger.info(f"Total uncategorized quotes count: {len(uncategorized_quotes)}")
-#     return uncategorized_quotes
 def get_uncategorized_quotes():
     uncategorized_quotes = Quote.query.filter(~Quote.categories.any()).all()
     logger.info(f"Total uncategorized quotes count: {len(uncategorized_quotes)}")
