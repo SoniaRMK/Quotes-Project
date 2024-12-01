@@ -15,13 +15,17 @@ routes = Blueprint('routes', __name__)
 @routes.route('/')
 @cross_origin()
 def home():
+    personalized_quotes = []
     if 'user_id' in session:
         user = User.query.get(session['user_id'])
-        # Fetch personalized quotes based on user's preferred categories
-        personalized_quotes = Quote.query.join(Quote.categories).filter(Category.id.in_([c.id for c in user.categories])).all()
+        if user:
+            # Fetch personalized quotes based on user's preferred categories
+            personalized_quotes = Quote.query.join(Quote.categories).filter(Category.id.in_([c.id for c in user.categories])).all()
+        else:
+            logger.error(f"No user found with ID: {session['user_id']}")
     else:
-        personalized_quotes = []
-
+        logger.warning("No user is logged in.")
+                
     # Consolidate categories
     consolidate_categories()
 
@@ -44,7 +48,6 @@ def home():
         featured_qod=featured_qod,
         personalized_quotes=personalized_quotes
     )
-
 
 def consolidate_categories():
     try:
@@ -181,12 +184,21 @@ def view_quotes():
     # Get pagination parameters from the request
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)  # Number of categories per page
+    search_query = request.args.get('search', '').strip()
 
     # Fetch and group all quotes by category
     categorized_quotes = {}
     uncategorized_quotes = []
 
-    all_quotes = Quote.query.order_by(Quote.id).all()
+    # Apply search filter if search_query is provided
+    if search_query:
+        all_quotes = Quote.query.join(User, User.id == Quote.submitted_by, isouter=True).filter(
+            (Quote.text.ilike(f"%{search_query}%")) |
+            (Quote.author.ilike(f"%{search_query}%")) |
+            (User.username.ilike(f"%{search_query}%"))
+        ).order_by(Quote.id).all()
+    else:
+        all_quotes = Quote.query.order_by(Quote.id).all()
 
     # Group quotes by categories and collect uncategorized quotes
     for quote in all_quotes:
@@ -228,7 +240,7 @@ def view_quotes():
         total_pages=total_pages,
         page=page,
         per_page=per_page,
-        search_query=request.args.get('search', ''),
+        search_query=search_query,
         expanded_categories=request.args.get('expanded_categories', '').split(',')
     )
 

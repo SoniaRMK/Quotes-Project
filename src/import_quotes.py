@@ -1,6 +1,9 @@
-import json
+import sys
 import os
-from models import db, Quote, Category
+import json  # <-- Add this line
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from src.models import db, Quote, Category
+from app import app
 from flask import Flask
 from dotenv import load_dotenv
 
