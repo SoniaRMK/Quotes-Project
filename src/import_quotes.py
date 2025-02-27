@@ -1,57 +1,55 @@
 import sys
 import os
-import json  # <-- Add this line
+import json  
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from src.models import db, Quote, Category
-from app import app
-from flask import Flask
+from src import create_app
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
-# Create a Flask app instance
-app = Flask(__name__)
+def create_import_app():
+    app = create_app({
+        'SQLALCHEMY_DATABASE_URI': os.getenv('DATABASE_URL'),
+        'SQLALCHEMY_TRACK_MODIFICATIONS': False,
+        'SECRET_KEY': os.getenv("SECRET_KEY")
+    })
+    return app
 
-# Configurations
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "your_secret_key_here")
+def main():
+    app = create_import_app()
+    with app.app_context():
+        try:
+            with open('bulk_quotes.json', 'r') as file:
+                quotes_data = json.load(file)
+        except FileNotFoundError:
+            print("Error: bulk_quotes.json not found.")
+            sys.exit(1)
+        except json.JSONDecodeError:
+            print("Error: Invalid JSON in bulk_quotes.json.")
+            sys.exit(1)
 
-# Initialize extensions
-db.init_app(app)
+        for item in quotes_data.get('quotes', []):
+            text = item.get('text')
+            author = item.get('author', 'Unknown')
+            category_name = item.get('category', 'Uncategorized')
 
-# Create a Flask app context so we can interact with the database
-with app.app_context():
-    # Open the JSON file and load quotes
-    with open('bulk_quotes.json', 'r') as file:
-        quotes_data = json.load(file)
+            # Find or create the category
+            category = Category.query.filter_by(name=category_name).first()
+            if not category:
+                category = Category(name=category_name)
+                db.session.add(category)
 
-    # Iterate through the quotes and add them to the database
-    for item in quotes_data.get('quotes', []):
-        # Extract the necessary information from each quote
-        text = item.get('text')
-        author = item.get('author', 'Unknown')  # Default to 'Unknown' if no author is provided
-        category_name = item.get('category', 'Uncategorized')  # Default to 'Uncategorized' if no category
+            # Avoid duplicate quotes
+            existing_quote = Quote.query.filter_by(text=text).first()
+            if not existing_quote:
+                new_quote = Quote(text=text, author=author)
+                new_quote.categories.append(category)
+                db.session.add(new_quote)
 
-        # Find or create the category
-        category = Category.query.filter_by(name=category_name).first()
-        if not category:
-            category = Category(name=category_name)
-            db.session.add(category)
-            db.session.commit()  # Commit after adding a new category
+        db.session.commit()
+        print("Quotes imported successfully!")
 
-        # Check if the quote already exists to avoid duplicates
-        existing_quote = Quote.query.filter_by(text=text).first()
-        if not existing_quote:
-            # Create a new quote and associate it with the category
-            new_quote = Quote(text=text, author=author)
-            new_quote.categories.append(category)
-
-            # Add the quote to the session
-            db.session.add(new_quote)
-
-    # Commit the session to save quotes to the database
-    db.session.commit()
-
-    print("Quotes imported successfully!")
+if __name__ == "__main__":
+    main()

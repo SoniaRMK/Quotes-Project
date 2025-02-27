@@ -11,26 +11,29 @@ import os
 # Load environment variables from .env file
 load_dotenv()
 
-def create_app():
+def create_app(config=None):
     app = Flask(__name__, static_folder='static')
 
-    # Load configuration from environment or default
+    # Load configuration from environment variables or defaults
     app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "your_secret_key_here")
     database_url = os.getenv('DATABASE_URL')
     if database_url and database_url.startswith("postgres://"):
         database_url = database_url.replace("postgres://", "postgresql://")
-
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SESSION_TYPE'] = 'filesystem'
-    app.config['SESSION_PERMANENT'] = False  # Use non-permanent sessions
+    app.config['SESSION_PERMANENT'] = False  
     app.config['SESSION_USE_SIGNER'] = True
     app.config['SESSION_COOKIE_HTTPONLY'] = True
 
+    # Allow configuration overrides (e.g. for testing)
+    if config:
+        app.config.update(config)
+
     # Initialize extensions
-    db.init_app(app)  # Initialize SQLAlchemy after importing models
+    db.init_app(app)
     Migrate(app, db)
-    csrf = CSRFProtect(app)
+    CSRFProtect(app)
     Session(app)
     CORS(app, resources={r"/*": {"origins": ["http://localhost:3000"]}}, supports_credentials=True)
 
