@@ -16,9 +16,17 @@ def get_quote_of_the_day():
     if quote:
         logger.info("Returning existing quote of the day from database.")
         return quote
-    else:
-        logger.info("No quote of the day found for today. Fetching new one.")
-        return fetch_new_quote_from_api(today)
+
+    logger.info("No quote of the day found for today. Checking cache before fetching a new one.")
+
+    # Check if we've recently hit the API (avoid calling too often)
+    last_fetched_time = cache.get("last_qod_fetch_time")
+    if last_fetched_time and (datetime.datetime.now() - last_fetched_time).seconds < 3600:
+        logger.info("Skipping API call: Recently fetched.")
+        return create_default_quote(today)
+
+    cache.set("last_qod_fetch_time", datetime.datetime.now())  
+    return fetch_new_quote_from_api(today)
 
 # Function to fetch a new quote from the API
 def fetch_new_quote_from_api(today):
