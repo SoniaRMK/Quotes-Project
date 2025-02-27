@@ -24,11 +24,11 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Import and start the scheduler if it's not already running
-from src.tasks import scheduler
+# from src.tasks import scheduler
 
-if not scheduler.running:
-    scheduler.start()
-    logger.info("Background scheduler started.")
+# if not scheduler.running:
+#     scheduler.start()
+#     logger.info("Background scheduler started.")
 
 # Debugging info
 logger.info(f"Current working directory: {os.getcwd()}")
