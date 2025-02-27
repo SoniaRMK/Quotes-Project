@@ -11,30 +11,15 @@ from flask_migrate import Migrate
 # Load environment variables from .env file
 load_dotenv()
 
-def create_app(config=None):
+def create_app(config_class):
     app = Flask(__name__, static_folder='static')
 
-    # Load SECRET_KEY from environment variables or fallback
-    app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "your_secret_key_here")
+    # Load configuration
+    app.config.from_object(config_class)
 
-    # Load and fix DATABASE_URL if needed
-    database_url = os.getenv('DATABASE_URL')
-    if database_url:
-        if database_url.startswith("postgres://"):
-            database_url = database_url.replace("postgres://", "postgresql://")
-        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-    else:
+    # Ensure DATABASE_URL is set
+    if not app.config.get("SQLALCHEMY_DATABASE_URI"):
         raise ValueError("DATABASE_URL is not set. Check your environment variables.")
-
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['SESSION_TYPE'] = 'filesystem'
-    app.config['SESSION_PERMANENT'] = False  
-    app.config['SESSION_USE_SIGNER'] = True
-    app.config['SESSION_COOKIE_HTTPONLY'] = True
-
-    # Allow configuration overrides (e.g., for testing)
-    if config:
-        app.config.update(config)
 
     # Initialize extensions
     db.init_app(app)

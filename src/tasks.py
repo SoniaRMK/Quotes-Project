@@ -10,11 +10,9 @@ def fetch_new_quote():
     get_quote_of_the_day()
 
 # Setting up the scheduler
-scheduler = BackgroundScheduler(daemon=True)  # Set as daemon to avoid blocking
+scheduler = BackgroundScheduler()
 scheduler.add_job(func=fetch_new_quote, trigger="cron", hour=0, minute=0)
 
-try:
+if not scheduler.running:
     scheduler.start()
     logger.info("Background scheduler started.")
-except Exception as e:
-    logger.error(f"Error starting scheduler: {e}")
