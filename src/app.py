@@ -31,9 +31,13 @@ if not scheduler.running:
     logger.info("Background scheduler started.")
 
 # Debugging info
-print("Current working directory:", os.getcwd())
-print("Python path:", sys.path)
+logger.info(f"Current working directory: {os.getcwd()}")
+logger.info(f"Python path: {sys.path}")
+
+# Determine the port
+port = int(os.environ.get("PORT", 10000))  # Default to 10000 if PORT is not set
+logger.info(f"Starting app on port {port}")
 
 # Run the app in development mode
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+    app.run(host="0.0.0.0", port=port)
